@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Business Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .chatbot-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+        
+        .user-message {
+            text-align: right;
+        }
+        
+        .user-message .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .bot-message .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e1e5e9;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .typing-dots {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 18px;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+        
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        .input-area {
+            background: white;
+            border-top: 1px solid #e1e5e9;
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex: 1;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .message-input:focus {
+            border-color: #4facfe;
+        }
+        
+        .send-button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            font-size: 20px;
+        }
+        
+        .send-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-action {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+        
+        .quick-action:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .admin-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 300px;
+        }
+        
+        .admin-panel h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .customize-btn {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #667eea;
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .chatbot-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .admin-panel {
+                display: none;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Panel for Business Owner -->
+    <div class="admin-panel">
+        <h3>🎛️ Chatbot Analytics</h3>
+        <div class="stats">
+            <span>Messages Today:</span>
+            <span id="messageCount">0</span>
+        </div>
+        <div class="stats">
+            <span>Active Users:</span>
+            <span id="activeUsers">1</span>
+        </div>
+        <div class="stats">
+            <span>Response Rate:</span>
+            <span>98%</span>
+        </div>
+        <button class="customize-btn" onclick="showCustomization()">Customize Bot</button>
+    </div>
+
+    <div class="chatbot-container">
+        <div class="header">
+            <div class="status-indicator"></div>
+            <h1>AI Business Assistant</h1>
+            <p>Powered by Advanced AI • Always Available</p>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <div class="message bot-message">
+                <div class="message-content">
+                    👋 Hello! I'm your AI business assistant. I can help you with:
+                    <br><br>
+                    • Product information & recommendations
+                    <br>• Business hours & location
+                    <br>• Booking appointments
+                    <br>• General inquiries
+                    <br><br>
+                    How can I assist you today?
+                </div>
+            </div>
+            
+            <div class="quick-actions">
+                <div class="quick-action" onclick="sendQuickMessage('What are your business hours?')">Business Hours</div>
+                <div class="quick-action" onclick="sendQuickMessage('I need product information')">Products</div>
+                <div class="quick-action" onclick="sendQuickMessage('How can I contact you?')">Contact Info</div>
+                <div class="quick-action" onclick="sendQuickMessage('I want to book an appointment')">Book Now</div>
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" class="message-input" id="messageInput" placeholder="Type your message..." />
+            <button class="send-button" id="sendButton" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // BUSINESS CONFIGURATION - Easy to customize for each client
+        const businessConfig = {
+            name: "Your Business Name",
+            hours: "Monday-Friday 9AM-6PM, Saturday 10AM-4PM",
+            phone: "+1 (555) 123-4567",
+            email: "info@yourbusiness.com",
+            address: "123 Business St, City, State 12345",
+            services: ["Web Development", "AI Solutions", "Consulting", "Support"],
+            bookingLink: "https://calendly.com/yourbusiness"
+        };
+
+        // AI RESPONSES DATABASE - This is where the magic happens!
+        const responses = {
+            greetings: [
+                "Hello! How can I help you today?",
+                "Hi there! What can I do for you?",
+                "Welcome! I'm here to assist you."
+            ],
+            
+            hours: [
+                `Our business hours are: ${businessConfig.hours}. We're always here to help!`,
+                `We're open ${businessConfig.hours}. Need immediate assistance? I'm available 24/7!`
+            ],
+            
+            contact: [
+                `You can reach us at ${businessConfig.phone} or email ${businessConfig.email}. Our address is ${businessConfig.address}.`,
+                `Contact us: Phone: ${businessConfig.phone}, Email: ${businessConfig.email}. We'd love to hear from you!`
+            ],
+            
+            services: [
+                `We offer: ${businessConfig.services.join(', ')}. Which service interests you most?`,
+                `Our main services include: ${businessConfig.services.join(', ')}. I can provide details about any of these!`
+            ],
+            
+            booking: [
+                `I'd be happy to help you book an appointment! You can schedule online at ${businessConfig.bookingLink} or I can connect you with our team.`,
+                "Great! Let me help you schedule that. What type of service are you interested in?"
+            ],
+            
+            pricing: [
+                "Our pricing varies by service. Let me know what you're interested in and I can provide specific details!",
+                "I'd be happy to discuss pricing! What service are you considering?"
+            ],
+            
+            default: [
+                "I understand you're asking about that. Let me connect you with the right information or a team member who can help!",
+                "That's a great question! I'd be happy to help you find the answer. Can you tell me more about what you need?",
+                "I want to make sure I give you the best answer. Could you provide a bit more detail about what you're looking for?"
+            ]
+        };
+
+        // SMART AI LOGIC - This makes the bot intelligent
+        function getSmartResponse(message) {
+            const msg = message.toLowerCase();
+            
+            // Greeting detection
+            if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
+                return getRandomResponse('greetings');
+            }
+            
+            // Hours/time questions
+            if (msg.includes('hour') || msg.includes('open') || msg.includes('close') || msg.includes('time')) {
+                return getRandomResponse('hours');
+            }
+            
+            // Contact information
+            if (msg.includes('contact') || msg.includes('phone') || msg.includes('email') || msg.includes('address')) {
+                return getRandomResponse('contact');
+            }
+            
+            // Services/products
+            if (msg.includes('service') || msg.includes('product') || msg.includes('offer') || msg.includes('do')) {
+                return getRandomResponse('services');
+            }
+            
+            // Booking/appointment
+            if (msg.includes('book') || msg.includes('appointment') || msg.includes('schedule') || msg.includes('meet')) {
+                return getRandomResponse('booking');
+            }
+            
+            // Pricing questions
+            if (msg.includes('price') || msg.includes('cost') || msg.includes('how much') || msg.includes('fee')) {
+                return getRandomResponse('pricing');
+            }
+            
+            // Default response for unrecognized questions
+            return getRandomResponse('default');
+        }
+
+        function getRandomResponse(category) {
+            const categoryResponses = responses[category];
+            return categoryResponses[Math.floor(Math.random() * categoryResponses.length)];
+        }
+
+        // CHAT FUNCTIONALITY
+        let messageCount = 0;
+
+        function addMessage(content, isUser = false) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            if (isUser) {
+                messageCount++;
+                document.getElementById('messageCount').textContent = messageCount;
+            }
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            const chatArea = document.getElementById('chatArea');
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Simulate AI thinking time
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = getSmartResponse(message);
+                addMessage(response);
+            }, Math.random() * 2000 + 1000); // 1-3 seconds delay for realism
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+        }
+
+        function showCustomization() {
+            alert('Customization panel would allow business owners to:\n\n• Update business information\n• Add new responses\n• View detailed analytics\n• Customize appearance\n• Set up integrations\n\nThis is where you\'d add your admin features!');
+        }
+
+        // Enter key support
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-focus on input
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>
